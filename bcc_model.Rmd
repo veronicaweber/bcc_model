@@ -1,0 +1,175 @@
+---
+title: "bcc_model"
+author: "Jordan Faires, Michael Wells, Veronica Weber"
+date: "5/9/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+library(tidyverse)
+library(chron)
+library(lubridate)
+library(ncdf4)
+library(RColorBrewer)
+library(lattice)
+
+setwd("~/Desktop/ESM Homework 3/Solar Empirical Model/bcc_model")
+```
+
+```{r }
+#------------------ BCC CSM2 version r1i1p1f1 is the Second Climate Model We're Going to Run ----------------------------#
+
+## Import Cloud Fragment Model ##
+
+# First set the file path  - you will need to adjust this so it is reflecting the filepath you are using on your own computer for this R project
+ncpath <- "~/Desktop/ESM Homework 3/Solar Empirical Model/bcc_model/"
+
+# Historical Time Series
+# Extract each set of climate variables from the filepath - there is only 1 time series here, from 1850-2014
+bcc_clt_50_14 <- "clt_BCC_hist_1850_2014"
+bcc_clt_50_14_x <- paste(ncpath, bcc_clt_50_14, ".nc", sep = "")
+
+##  SSP Scenario  ## - dates from 2015 - 2055
+bcc_clt_15_55 <- "clt_BCC_ssp_2015_2055"
+bcc_clt_15_55_x <- paste(ncpath, bcc_clt_15_55, ".nc", sep = "")
+
+# open up the nc files so r can work with them
+bcc_clt_hist_1850_2014 <- nc_open(bcc_clt_50_14_x)
+bcc_clt_ssp_2015_2055 <- nc_open(bcc_clt_15_55_x)
+
+# set the name of the variable
+dname <- "clt"  
+
+# Time coordinate for 20th/early21st century part of run from 1850 - 2015 BUT let's narrow down the historical period to just focus on 1950 - 2014 (like we did for NCAR model)
+bcc_clt_50_14_time <- ncvar_get(bcc_clt_hist_1850_2014,"time")
+bcc_clt_50_14_tunits <- ncatt_get(bcc_clt_hist_1850_2014,"time","units")
+origin="1/01/1950"
+enddate="12/01/2014"
+bcc_clt_time_1950_2014 <- seq.dates(origin, enddate, by = "months") 
+  
+# Time coordinate for later 21st century part of run from 2015 - 2055
+bcc_clt_15_55_time <- ncvar_get(bcc_clt_ssp_2015_2055,"time")
+bcc_clt_15_55_tunits <- ncatt_get(bcc_clt_ssp_2015_2055,"time","units")
+origin="1/01/2015"
+enddate="12/01/2055"
+bcc_clt_time_15_55 <- seq.dates(origin, enddate, by="months")
+
+
+# Read in the lat and lon coordinates from ONLY ONE of the data files (they're slices of output from the same climate model, and therefore use the same spatial grid). 
+lon <- ncvar_get(bcc_clt_hist_1850_2014,"lon")
+nlon <- dim(lon)
+lat <- ncvar_get(bcc_clt_hist_1850_2014,"lat")
+nlat <- dim(lat)
+
+# Set latitude and longitude - Note on coordinates: CESM uses a 0-360 degree longitude convention (or degrees E, to be specific). Ivanpah's coordinates are: 35.5568° N, 115.4705° W  - I have subtracted it from 360: 360 - 115.4705 = 244.53 
+lats = which(lat >= 35 & lat <= 36)
+lons = which(lon >= 244 & lon <= 245)
+
+```
+
+Surface Temperature ("TS") Data
+```{r loadtemp_ncdf4}
+
+###  Import Surface Temp Data ####
+## Historical ##
+bcc_ts_50_14 <- "ts_BCC_hist_1850_2014"
+bcc_ts_hist_1850_2014_x <- paste(ncpath, bcc_ts_50_14, ".nc", sep = "")
+
+## SSP Scenario ##
+bcc_ts_15_55 <- "ts_BCC_ssp_2015_2055" 
+bcc_ts_ssp_2015_2055_x <- paste(ncpath, bcc_ts_15_55, ".nc", sep="")
+
+# open up the nc files so r can work with them
+bcc_ts_hist_1850_2014 <- nc_open(bcc_ts_hist_1850_2014_x)
+
+bcc_ts_ssp_2015_2055 <- nc_open(bcc_ts_ssp_2015_2055_x)
+
+# Isolate the variable we're concerned about, the surface temperature variable, "ts"
+dname <- "ts"
+
+# Time coordinate for 20th/early century part of run from 1850 - 2014 - focusing only on 1950 - 2014
+bcc_ts_1850_2014_time <- ncvar_get(bcc_ts_hist_1850_2014,"time")
+bcc_ts_1850_2014_tunits <- ncatt_get(bcc_ts_hist_1850_2014,"time","units")
+origin="1/01/1950"
+enddate="12/01/2014"
+bcc_ts_time_1950_2014 <- seq.dates(origin, enddate, by = "months") 
+  
+# Time coordinate for later 21st century part of run from 2014 - 2055
+bcc_ts_2015_2055_time <- ncvar_get(bcc_ts_ssp_2015_2055,"time")
+bcc_ts_2015_2055_tunits <- ncatt_get(bcc_ts_ssp_2015_2055,"time","units")
+origin="1/01/2015"
+enddate="12/01/2055"
+bcc_ts_time_2015_2055 <- seq.dates(origin, enddate, by="months")
+
+# Read in the lat and lon coordinates from ONLY ONE of the data files (they're slices of output from the same climate model, and therefore use the same spatial grid). 
+lon <- ncvar_get(bcc_ts_hist_1850_2014,"lon")
+nlon <- dim(lon)
+lat <- ncvar_get(bcc_ts_hist_1850_2014,"lat")
+nlat <- dim(lat)
+
+# Convert TS into Celcius by subtracting 273.15 (original units are in Kelvin)
+ts_hist_1850_2014 <- ncvar_get(bcc_ts_hist_1850_2014, "ts")-273.15
+ts_hist_2015_2055 <- ncvar_get(bcc_ts_ssp_2015_2055, "ts")-273.15
+
+# Align w Ivanpah coordinates
+lats = which(lat >= 35 & lat <= 36)
+lons = which(lon >= 244 & lon <= 245)
+
+# Regional Average of surface temperatures - This is based off Sam's other example but I can't get it to work
+# tsavg_hist_50_99 <- apply(ts_hist_50_99[lons,lats,],3, mean)
+# tsavg_hist_00_14 <- apply(ts_hist_00_14[lons,lats,],3, mean)
+# tsavg_ssp_14_64 <- apply(ts_ssp_14_64[lons,lats,],3, mean)
+```
+
+Surface Downwelling Clearsky Shortwave Radiation (RSDSCS)
+```{r}
+###  Import Clearsky Shortwave Radiation Data ####
+## Historical ##
+bcc_rsdscs_50_14 <- "rsdscs_BCC_hist_1850_2014"
+bcc_rsdscs_hist_1850_2014_x <- paste(ncpath, bcc_rsdscs_50_14, ".nc", sep = "")
+
+
+## SSP Scenario ##
+bcc_rsdscs_15_55 <- "rsdscs_BCC_ssp_2015_2055" 
+bcc_rsdscs_2015_2055_x <- paste(ncpath, bcc_rsdscs_15_55, ".nc", sep = "")
+
+# open up the nc files so r can work with them
+bcc_rsdscs_hist_1850_2014 <- nc_open(bcc_rsdscs_hist_1850_2014_x)
+bcc_rsdscs_ssp_2015_2055 <- nc_open(bcc_rsdscs_2015_2055_x)
+
+# Isolate the variable we're concerned about, the shortwave radiation variable - "rsdscs"
+dname <- "rsdscs"
+
+# Time coordinate for 20th century part of run from 1950 - 2014
+bcc_rsdscs_1950_2014_time <- ncvar_get(bcc_rsdscs_hist_1850_2014,"time")
+bcc_rsdscs_1959_2014_tunits <- ncatt_get(bcc_rsdscs_hist_1850_2014,"time","units")
+origin="1/01/1950"
+enddate="12/01/2014"
+bcc_rsdscs_time_1950_2014 <- seq.dates(origin, enddate, by = "months") 
+
+# Time coordinate for later 21st century part of run from 2015 - 2055
+bcc_rsdscs_2015_2055_time <- ncvar_get(bcc_rsdscs_ssp_2015_2055,"time")
+bcc_rsdscs_2015_2055_tunits <- ncatt_get(bcc_rsdscs_ssp_2015_2055,"time","units")
+origin="1/01/2015"
+enddate="12/01/2055"
+bcc_rsdscs_time_2015_2055 <- seq.dates(origin, enddate, by="months")
+
+# Read in the lat and lon coordinates from ONLY ONE of the data files (they're slices of output from the same climate model, and therefore use the same spatial grid). 
+lon <- ncvar_get(bcc_rsdscs_hist_1850_2014,"lon")
+nlon <- dim(lon)
+lat <- ncvar_get(bcc_rsdscs_hist_1850_2014,"lat")
+nlat <- dim(lat)
+
+# Align w Ivanpah coordinates
+lats = which(lat >= 35 & lat <= 36)
+lons = which(lon >= 244 & lon <= 245)
+
+
+```
+
