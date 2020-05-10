@@ -51,7 +51,7 @@ bcc_clt_50_14_time <- ncvar_get(bcc_clt_hist_1850_2014,"time")
 bcc_clt_50_14_tunits <- ncatt_get(bcc_clt_hist_1850_2014,"time","units")
 origin="1/01/1950"
 enddate="12/01/2014"
-bcc_clt_time_1950_2014 <- seq.dates(origin, enddate, by = "months") 
+bcc_clt_time_1850_2014 <- seq.dates(origin, enddate, by = "months") 
   
 # Time coordinate for later 21st century part of run from 2015 - 2055
 bcc_clt_15_55_time <- ncvar_get(bcc_clt_ssp_2015_2055,"time")
@@ -67,7 +67,7 @@ nlon <- dim(lon)
 lat <- ncvar_get(bcc_clt_hist_1850_2014,"lat")
 nlat <- dim(lat)
 
-# Set latitude and longitude - Note on coordinates: CESM uses a 0-360 degree longitude convention (or degrees E, to be specific). Ivanpah's coordinates are: 35.5568° N, 115.4705° W  - I have subtracted it from 360: 360 - 115.4705 = 244.53 
+# Set latitude and longitude - Note on coordinates: climate models tend to use a 0-360 degree longitude convention (or degrees E, to be specific). Ivanpah's coordinates are: 35.5568° N, 115.4705° W  - I have subtracted it from 360: 360 - 115.4705 = 244.53 
 lats = which(lat >= 35 & lat <= 36)
 lons = which(lon >= 244 & lon <= 245)
 
@@ -93,14 +93,14 @@ bcc_ts_ssp_2015_2055 <- nc_open(bcc_ts_ssp_2015_2055_x)
 # Isolate the variable we're concerned about, the surface temperature variable, "ts"
 dname <- "ts"
 
-# Time coordinate for 20th/early century part of run from 1850 - 2014 - focusing only on 1950 - 2014
+# Time coordinate for 20th/early century part of run from 1850 - 2014 
 bcc_ts_1850_2014_time <- ncvar_get(bcc_ts_hist_1850_2014,"time")
 bcc_ts_1850_2014_tunits <- ncatt_get(bcc_ts_hist_1850_2014,"time","units")
-origin="1/01/1950"
+origin="1/01/1850"
 enddate="12/01/2014"
-bcc_ts_time_1950_2014 <- seq.dates(origin, enddate, by = "months") 
+bcc_ts_time_1850_2014 <- seq.dates(origin, enddate, by = "months") 
   
-# Time coordinate for later 21st century part of run from 2014 - 2055
+# Time coordinate for later 21st century part of run from 2015 - 2055
 bcc_ts_2015_2055_time <- ncvar_get(bcc_ts_ssp_2015_2055,"time")
 bcc_ts_2015_2055_tunits <- ncatt_get(bcc_ts_ssp_2015_2055,"time","units")
 origin="1/01/2015"
@@ -147,11 +147,11 @@ bcc_rsdscs_ssp_2015_2055 <- nc_open(bcc_rsdscs_2015_2055_x)
 dname <- "rsdscs"
 
 # Time coordinate for 20th century part of run from 1950 - 2014
-bcc_rsdscs_1950_2014_time <- ncvar_get(bcc_rsdscs_hist_1850_2014,"time")
-bcc_rsdscs_1959_2014_tunits <- ncatt_get(bcc_rsdscs_hist_1850_2014,"time","units")
-origin="1/01/1950"
+bcc_rsdscs_1850_2014_time <- ncvar_get(bcc_rsdscs_hist_1850_2014,"time")
+bcc_rsdscs_1850_2014_tunits <- ncatt_get(bcc_rsdscs_hist_1850_2014,"time","units")
+origin="1/01/1850"
 enddate="12/01/2014"
-bcc_rsdscs_time_1950_2014 <- seq.dates(origin, enddate, by = "months") 
+bcc_rsdscs_time_1850_2014 <- seq.dates(origin, enddate, by = "months") 
 
 # Time coordinate for later 21st century part of run from 2015 - 2055
 bcc_rsdscs_2015_2055_time <- ncvar_get(bcc_rsdscs_ssp_2015_2055,"time")
